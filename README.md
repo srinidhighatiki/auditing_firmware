@@ -3,20 +3,22 @@ Auditing Firmware
 This repository provides a simple and reliable auditing mechanism for
 configuration data stored in the STM32 flash memory. The auditing module
 reads raw binary data from flash, computes its SHA256 hash, and returns
-the digest, which can be used for blockchain-based integrity
-verification.
+the digest, which can be used for blockchain-based integrity verification.
 
-Note: X-CUBE-CRYPTOLIB version 4.2.0 is included in the STM32 Project folder which can be found at
+Note: X-CUBE-CRYPTOLIB version 4.2.0 is included in the STM32 Project
+folder. More details at:
 https://www.st.com/en/embedded-software/x-cube-cryptolib.html
 
 
 Overview
 
-When the auditing API is provided with: - A flash memory start address -
-The size of the data to read - A buffer to store the extracted bytes
+When the auditing API is provided with:
+- A flash memory start address
+- The size of the data to read
+- A buffer to store the extracted bytes
 
 It reads the raw binary data from flash and hashes it using the SHA256
-algorithm. The resulting 32‑byte (256‑bit) hash digest can be shared
+algorithm. The resulting 32-byte (256-bit) hash digest can be shared
 with a blockchain or verification server. Any mismatch between stored
 and computed digests indicates tampering or corruption.
 
@@ -24,7 +26,7 @@ and computed digests indicates tampering or corruption.
 
 audit.c — Auditing APIs
 
-### audit_compute_hash(uint32_t address, uint32_t size, uint8_t *digest_out)
+audit_compute_hash(uint32_t address, uint32_t size, uint8_t *digest_out)
 
 Purpose:
 Reads raw data from flash and computes its SHA256 hash.
@@ -32,17 +34,38 @@ Reads raw data from flash and computes its SHA256 hash.
 Arguments:
 - address: Starting flash address to read.
 - size: Number of bytes to read from flash.
-- digest_out: Pointer to a 32‑byte buffer where the computed SHA256
-digest will be written.
+- digest_out: Pointer to a 32-byte buffer where the computed SHA256
+  digest will be written.
 
 Functionality:
-- Calls flash read APIs from flash.c
+- Calls flash_read_bytes() from flash.c
 - Feeds read data into SHA256 algorithm
-- Produces a 32‑byte digest representing the flash content
+- Produces a 32-byte digest representing the flash content
 
 What it accomplishes:
-Provides an integrity‑proof hash of the flash data for comparison or
+Provides an integrity-proof hash of the flash data for comparison or
 external verification.
+
+
+f_write(uint32_t address, uint32_t *data, uint32_t length)
+
+Purpose:
+Writes a block of 32-bit words into STM32 flash memory.
+
+Arguments:
+- address: Flash memory start address where data will be written.
+- data: Pointer to the array of 32-bit words to write.
+- length: Number of 32-bit words to program into flash.
+
+Functionality:
+- Unlocks flash using HAL_FLASH_Unlock()
+- Writes each 32-bit word using HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, ...)
+- Ensures each programmed value is written correctly
+- Locks flash again with HAL_FLASH_Lock()
+
+What it accomplishes:
+Enables safe and direct writing of configuration data into internal
+flash, useful for storing settings or updating values prior to auditing.
 
 ------------------------------------------------------------------------
 
@@ -59,21 +82,22 @@ Arguments:
 - size: Number of bytes to read.
 
 Functionality:
-- Performs safe raw-byte extraction from STM32 flash memory
-- Used internally by audit_compute_hash()
+- Performs safe raw-byte extraction from STM32 flash memory.
+- Used internally by audit_compute_hash().
 
 How audit.c uses it:
 The auditing module relies on flash_read_bytes() to obtain exact
-byte‑level data from flash before hashing.
+byte-level data from flash before hashing.
 
 ------------------------------------------------------------------------
 
 Summary
 
-This firmware provides: - A clean API for flash data extraction
+This firmware provides:
+- A clean API for flash data extraction
 - SHA256 hashing for data integrity verification
-- A modular structure where audit.c uses low‑level flash utilities in
-flash.c
+- A modular structure where audit.c uses low-level flash utilities in
+  flash.c
 
 The final digest can be shared with a blockchain or remote validator to
 ensure the configuration data stored in flash has not been modified.
